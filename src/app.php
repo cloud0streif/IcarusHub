@@ -59,7 +59,7 @@ $app->register(new MonologServiceProvider(), array(
 
 $app->register(new TwigServiceProvider(), array(
     'twig.options'        => array(
-        'cache'            => isset($app['twig.options.cache']) ? $app['twig.options.cache'] : false,
+        'cache'            => false,
         'strict_variables' => true
     ),
     'twig.form.templates' => array('form_div_layout.html.twig', 'common/form_div_layout.html.twig'),

@@ -6,12 +6,18 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Validator\Constraints as Assert;
 
 $app->match('/', function() use ($app) {
-    $app['session']->getFlashBag()->add('warning', 'Warning flash message');
-    $app['session']->getFlashBag()->add('info', 'Info flash message');
-    $app['session']->getFlashBag()->add('success', 'Success flash message');
-    $app['session']->getFlashBag()->add('error', 'Error flash message');
+    $input= 9;
 
-    return $app['twig']->render('index.html.twig');
+    $output = 3;
+    if (($input % 2) == 0){
+        $output = 1;
+    } else {
+        $output = 2;
+    }
+
+    return $app['twig']->render('index.html.twig', array(
+        "output" => $output
+    ));
 })->bind('homepage');
 
 $app->match('/login', function(Request $request) use ($app) {
