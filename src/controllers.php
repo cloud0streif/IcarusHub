@@ -70,6 +70,8 @@ $app->match('/form', function(Request $request) use ($app) {
         ->add('Longit', 'integer')
         ->add('Time', 'integer')
         ->add('Dir', 'text')
+        ->add('Day', 'integer')
+        ->add('Elev_ang', 'integer')
 //        ->add('money', 'money')
 //        ->add('number', 'number')
 //        ->add('password', 'password')
@@ -119,20 +121,78 @@ $app->match('/form', function(Request $request) use ($app) {
         // get the form object
         $submission = $request->get("form");
 
+        $Longit = $submission["Longit"];
+        $Dir =$submission["Dir"];
+        $Time = $submission["Time"];
+        $Day = $submission["Day"];
+        $Elev_ang = deg2rad($submission["Elev_ang"]);
+        $Ps = 1000; //W/m^2
+
+        if ($Dir="W")
+            $Longit = $Longit * -1;
+
+        $t_zone = round($Longit / 15);
+
+        $d_deg = (360/365.2422)*$Day;
+        $d_rad = deg2rad((360/365.2422)*$Day);
+
+        $EOT = -0.017188 - 0.42811 * Cos($d_rad) + 7.35141 * Sin($d_rad) + 3.34946 * Cos(2 * $d_rad) + 9.3617 * Sin(2 * $d_rad);
+
+        $t_offset = $EOT -  4 * $Longit + 60 * $t_zone;
+
+        $t_true = $Time + $t_offset / 60;
+
+        $alpha = deg2rad(360 / 24 * ($t_true - 12));
+
+        $declination = deg2rad(23.44 * Sin(deg2rad(360 * (($Day - 80) / 365.25))));
+
+        $cos_zenith = Sin($declination) * Sin(deg2rad($Longit )) + Cos($declination) * Cos(deg2rad($Longit)) * Cos($alpha);
+
+        $zenith = Acos($cos_zenith);
+
+        $tan_azimuth = Sin($alpha) / (Sin(deg2rad($Longit)) * Cos($alpha) - Cos(deg2rad($Longit)) * Tan($declination));
+
+        $sol_azimuth = "";
+        If ($alpha > 0 And $tan_azimuth > 0)
+            $sol_azimuth = 180 + rad2deg(Atan($tan_azimuth));
+
+        If ($alpha > 0 And $tan_azimuth < 0)
+            $sol_azimuth = 360 + rad2deg(Atan($tan_azimuth));
+
+        If ($alpha < 0 And $tan_azimuth > 0)
+            $sol_azimuth = rad2deg(Atan($tan_azimuth));
+
+        If ($alpha < 0 And $tan_azimuth < 0)
+            $sol_azimuth = 180 + rad2deg(Atan($tan_azimuth));
+
+        $azimuth = array(range(1,360,1));
+        $P = array();
+            For($i = 1; $i=360; $i++){
+
+                $P[] = $Ps * (Cos($Elev_ang) * Cos($zenith) + Sin($Elev_ang) * Sin($zenith) * Cos(deg2rad($sol_azimuth - $azimuth[$i])));
+            }
+        $Opt_Az = array_keys($P,max($P));
         // rewrite your function using the $submission['whatever'] variables here
         // use http://php.net/manual/en/book.math.php
         $twiceLong = $submission["Longit"] * 2;
 
         // Write your equation here and set the ouput
         //the . conatemates two things together
-        $output = "your equation output here for example, 2x the longiture=".$twiceLong;
+       // $output = "your equation output here for example, 2x the longiture=".$twiceLong;
 
         // on form submission, we'll return the display template
         return $app['twig']->render('display.html.twig', array(
-            'Longit' => $submission["Longit"],
-            'Dir' => $submission["Dir"],
-            'Time' => $submission["Time"],
-            'output' => $output,
+            'Longitude' => $submission["Longit"],
+            'Dir' => $Dir,
+            'Time' => $Time,
+            'EOT' => $EOT,
+            'T_offset' => $t_offset,
+            'True_Time' => $t_true,
+            'Power' => $P,
+            'Time_Zone' => $t_zone,
+            'Azimuth' => $azimuth,
+            'Power' => $P,
+            'Opt_Az' => $Opt_Az,
 
         ));
 
