@@ -172,6 +172,9 @@ $app->match('/form', function(Request $request) use ($app) {
                 $P[] = $Ps * (Cos($Elev_ang) * Cos($zenith) + Sin($Elev_ang) * Sin($zenith) * Cos(deg2rad($sol_azimuth - $azimuth[$i])));
             }
         $Opt_Az = array_keys($P,max($P));
+
+
+        
         // rewrite your function using the $submission['whatever'] variables here
         // use http://php.net/manual/en/book.math.php
         $twiceLong = $submission["Longit"] * 2;
